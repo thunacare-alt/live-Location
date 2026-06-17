@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📍 Live Location Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📍 Share Delivery Location</title>
     <style>
-        /* Same styles as before */
         * {
             margin: 0;
             padding: 0;
@@ -70,34 +69,50 @@
             background: #667eea;
             color: white;
             border: none;
-            padding: 14px 30px;
+            padding: 16px 30px;
             border-radius: 50px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
             transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
         .btn:hover {
             background: #5a67d8;
             transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
         }
-        .btn-danger { background: #e53e3e; }
-        .btn-danger:hover { background: #c53030; }
-        .btn-secondary { background: #e2e8f0; color: #333; }
+        .btn:active { transform: translateY(0); }
+        .btn-success {
+            background: #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        .btn-success:hover {
+            background: #218838;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #333;
+            box-shadow: none;
+        }
+        .btn-secondary:hover { background: #cbd5e0; transform: translateY(-2px); }
+        .btn-danger {
+            background: #dc3545;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+        .btn-danger:hover {
+            background: #c82333;
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.5);
+        }
         .hidden { display: none !important; }
         .success { background: #d4edda; border: 2px solid #28a745; }
         .error { background: #f8d7da; border: 2px solid #dc3545; }
         .info { background: #d1ecf1; border: 2px solid #17a2b8; }
         .warning { background: #fff3cd; border: 2px solid #ffc107; }
         .footer { margin-top: 20px; font-size: 12px; color: #999; }
-        .timer {
-            font-size: 14px;
-            color: #667eea;
-            font-weight: bold;
-            margin: 5px 0;
-        }
         .driver-id {
             background: #f0f0f0;
             padding: 8px 15px;
@@ -106,6 +121,31 @@
             font-size: 12px;
             color: #666;
             margin-top: 10px;
+        }
+        .delivery-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .delivery-info label {
+            font-size: 12px;
+            color: #999;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .delivery-info input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .delivery-info input:focus {
+            outline: none;
+            border-color: #667eea;
         }
         .badge {
             display: inline-block;
@@ -116,41 +156,73 @@
             font-size: 12px;
             margin-top: 5px;
         }
+        .countdown {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .map-preview {
+            width: 100%;
+            height: 150px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+        }
+        .map-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">🔄</div>
-        <h1>Live Location Tracker</h1>
-        <p class="subtitle">Your location will be shared every 2 hours</p>
+        <div class="logo">🚚</div>
+        <h1>📍 Delivery Location</h1>
+        <p class="subtitle">Click once to share your exact location</p>
         
         <div id="driverInfo" class="driver-id hidden">Driver: <span id="driverIdDisplay"></span></div>
         
+        <!-- Delivery Details -->
+        <div class="delivery-info" id="deliveryInfo">
+            <label>📦 Delivery ID</label>
+            <input type="text" id="deliveryId" placeholder="Enter delivery ID (optional)">
+        </div>
+        
         <div class="status-box" id="statusBox">
             <div class="status-icon" id="statusIcon">📍</div>
-            <div class="status-text" id="statusText">Starting tracker...</div>
-            <div class="loading" id="loadingSpinner"></div>
+            <div class="status-text" id="statusText">Ready to share location</div>
+            <div class="loading hidden" id="loadingSpinner"></div>
             <div class="status-detail" id="statusDetail"></div>
         </div>
 
-        <div id="trackingControls">
-            <button class="btn" id="startBtn">▶️ Start Tracking</button>
-            <button class="btn btn-danger hidden" id="stopBtn">⏹️ Stop Tracking</button>
+        <button class="btn" id="shareBtn">📤 Share My Location</button>
+        <button class="btn btn-success hidden" id="resendBtn">🔄 Resend Location</button>
+        <button class="btn btn-secondary hidden" id="manualBtn">📱 Open Maps</button>
+        
+        <div id="mapPreview" class="map-preview hidden">
+            🗺️ Location will appear here
         </div>
         
         <div class="footer">
             <span id="timestamp"></span><br>
-            <span id="nextUpdate" class="timer">Next update: --</span>
+            <span id="statusMessage" style="color: #28a745;"></span>
         </div>
     </div>
 
     <script>
         // ===== CONFIGURATION =====
         const WEBHOOK_URL = "https://YOUR-BACKEND.onrender.com/api/location";
-        const TRACKING_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
         // =========================
 
-        // Get driver ID
+        // Get driver ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const driverId = urlParams.get('id') || urlParams.get('driver') || 'unknown';
         
@@ -160,18 +232,18 @@
         const statusText = document.getElementById('statusText');
         const statusDetail = document.getElementById('statusDetail');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const resendBtn = document.getElementById('resendBtn');
+        const manualBtn = document.getElementById('manualBtn');
         const driverIdDisplay = document.getElementById('driverIdDisplay');
         const driverInfo = document.getElementById('driverInfo');
+        const deliveryId = document.getElementById('deliveryId');
         const timestamp = document.getElementById('timestamp');
-        const nextUpdate = document.getElementById('nextUpdate');
+        const statusMessage = document.getElementById('statusMessage');
+        const mapPreview = document.getElementById('mapPreview');
 
-        let watchId = null;
-        let intervalId = null;
         let lastLocation = null;
-        let isTracking = false;
-        let updateCount = 0;
+        let locationSent = false;
 
         // Show driver ID
         if (driverId !== 'unknown') {
@@ -179,7 +251,7 @@
             driverInfo.classList.remove('hidden');
         }
 
-        timestamp.textContent = '🕐 Started: ' + new Date().toLocaleString();
+        timestamp.textContent = '🕐 ' + new Date().toLocaleString();
 
         function updateStatus(icon, text, detail, type = 'info') {
             statusIcon.textContent = icon;
@@ -190,7 +262,7 @@
             statusBox.classList.add(type);
         }
 
-        function showLoading(text = 'Getting location...') {
+        function showLoading(text = 'Getting your location...') {
             statusIcon.textContent = '📍';
             statusText.textContent = text;
             statusDetail.textContent = '';
@@ -198,58 +270,94 @@
             statusBox.classList.remove('success', 'error', 'info', 'warning');
         }
 
+        function showMap(lat, lng) {
+            mapPreview.classList.remove('hidden');
+            mapPreview.innerHTML = `
+                <img src="https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=400x150&markers=color:red%7C${lat},${lng}&key=YOUR_GOOGLE_MAPS_API_KEY" 
+                     alt="Location map">
+                <div style="position:absolute; bottom:10px; background:rgba(0,0,0,0.7); color:white; padding:4px 12px; border-radius:20px; font-size:12px;">
+                    📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}
+                </div>
+            `;
+            mapPreview.style.position = 'relative';
+        }
+
         function sendLocation(position) {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const accuracy = position.coords.accuracy;
             
+            const deliveryIdValue = deliveryId.value || 'N/A';
+            
             const data = {
                 driverId: driverId,
+                deliveryId: deliveryIdValue,
                 latitude: lat,
                 longitude: lng,
                 accuracy: accuracy,
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent,
-                updateNumber: ++updateCount,
-                source: 'periodic-tracking'
+                source: 'one-click-delivery'
             };
             
-            console.log(`📍 Update #${updateCount}:`, data);
+            console.log('📍 Sending location:', data);
+            
+            showLoading('Sending your location...');
             
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Server error: ' + response.status);
+                return response.json();
+            })
             .then(result => {
-                console.log('✅ Location saved:', result);
+                console.log('✅ Success:', result);
                 lastLocation = { lat, lng };
+                locationSent = true;
+                
                 updateStatus(
                     '✅',
-                    `Location #${updateCount} sent!`,
-                    `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}\n🎯 Accuracy: ${Math.round(accuracy)}m`,
+                    'Location sent successfully!',
+                    `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}\n🎯 Accuracy: ${Math.round(accuracy)}m\n📦 Delivery: ${deliveryIdValue}`,
                     'success'
                 );
+                
+                statusMessage.textContent = '✅ Location received by dispatch';
+                shareBtn.classList.add('hidden');
+                resendBtn.classList.remove('hidden');
+                manualBtn.classList.remove('hidden');
+                
+                // Show map
+                showMap(lat, lng);
             })
             .catch(error => {
                 console.error('❌ Error:', error);
                 updateStatus(
                     '⚠️',
-                    `Update #${updateCount} failed`,
-                    'Will retry in 2 hours',
+                    'Could not send location',
+                    'Please check your internet and try again',
                     'error'
                 );
+                shareBtn.textContent = '🔄 Try Again';
+                statusMessage.textContent = '❌ Failed to send. Please try again.';
             });
         }
 
         function getLocation() {
             if (!navigator.geolocation) {
-                updateStatus('❌', 'Location not supported', 'Please use a modern browser', 'error');
+                updateStatus(
+                    '❌',
+                    'Location not supported',
+                    'Please use a modern browser with GPS',
+                    'error'
+                );
                 return;
             }
 
-            showLoading('Getting your location...');
+            showLoading('Getting your GPS location...');
             
             const options = {
                 enableHighAccuracy: true,
@@ -260,73 +368,75 @@
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     sendLocation(position);
-                    // Calculate next update time
-                    const nextTime = new Date(Date.now() + TRACKING_INTERVAL);
-                    nextUpdate.textContent = `Next update: ${nextTime.toLocaleTimeString()}`;
                 },
                 (error) => {
                     console.error('Geolocation error:', error);
-                    updateStatus(
-                        '🔒',
-                        'Location access required',
-                        'Please allow location access and try again',
-                        'error'
-                    );
-                    stopTracking();
+                    let message = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            message = 'Please allow location access and try again';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message = 'GPS signal weak. Please go outside and try again';
+                            break;
+                        case error.TIMEOUT:
+                            message = 'GPS taking too long. Please try again';
+                            break;
+                        default:
+                            message = 'Unknown error. Please try again';
+                    }
+                    updateStatus('🔒', 'Location access required', message, 'error');
+                    shareBtn.textContent = '🔄 Try Again';
                 },
                 options
             );
         }
 
-        function startTracking() {
-            if (isTracking) return;
-            
-            // First location immediately
+        // Share button click
+        shareBtn.addEventListener('click', function() {
+            shareBtn.textContent = '⏳ Getting location...';
+            shareBtn.disabled = true;
             getLocation();
-            
-            // Then every 2 hours
-            intervalId = setInterval(() => {
-                console.log('⏰ 2 hours passed, getting location...');
+            // Re-enable after 5 seconds if still waiting
+            setTimeout(() => {
+                shareBtn.disabled = false;
+                if (!locationSent) {
+                    shareBtn.textContent = '🔄 Try Again';
+                }
+            }, 5000);
+        });
+
+        // Resend button
+        resendBtn.addEventListener('click', function() {
+            if (lastLocation) {
+                // Send last known location again
+                const dummyPosition = {
+                    coords: {
+                        latitude: lastLocation.lat,
+                        longitude: lastLocation.lng,
+                        accuracy: 10
+                    }
+                };
+                sendLocation(dummyPosition);
+            } else {
                 getLocation();
-            }, TRACKING_INTERVAL);
-            
-            isTracking = true;
-            startBtn.classList.add('hidden');
-            stopBtn.classList.remove('hidden');
-            
-            updateStatus(
-                '🔄',
-                'Tracking started!',
-                `Location will be sent every 2 hours\nDriver: ${driverId}`,
-                'info'
-            );
-        }
-
-        function stopTracking() {
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
             }
-            isTracking = false;
-            startBtn.classList.remove('hidden');
-            stopBtn.classList.add('hidden');
-            
-            updateStatus(
-                '⏹️',
-                'Tracking stopped',
-                `Total updates: ${updateCount}`,
-                'warning'
-            );
+        });
+
+        // Manual map
+        manualBtn.addEventListener('click', function() {
+            if (lastLocation) {
+                window.open(`https://www.google.com/maps?q=${lastLocation.lat},${lastLocation.lng}`, '_blank');
+            } else {
+                window.open('https://www.google.com/maps', '_blank');
+            }
+        });
+
+        // Auto-detect delivery ID from URL
+        const deliveryParam = urlParams.get('delivery') || urlParams.get('d');
+        if (deliveryParam) {
+            deliveryId.value = deliveryParam;
         }
-
-        // Event listeners
-        startBtn.addEventListener('click', startTracking);
-        stopBtn.addEventListener('click', stopTracking);
-
-        // Auto-start? (Uncomment if you want it to start automatically)
-        // window.addEventListener('load', () => {
-        //     setTimeout(startTracking, 1000);
-        // });
     </script>
 </body>
 </html>
